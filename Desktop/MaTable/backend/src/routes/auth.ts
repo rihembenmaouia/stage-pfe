@@ -34,12 +34,12 @@ function setRefreshCookie(res: Response, token: string) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge,
-    path: '/api/auth',
+    path: '/api',
   });
 }
 
 function clearRefreshCookie(res: Response) {
-  res.clearCookie(COOKIE_NAME, { path: '/api/auth' });
+  res.clearCookie(COOKIE_NAME, { path: '/api' });
 }
 
 // POST /api/auth/register and POST /api/auth/signup (body.name accepted as fullName)

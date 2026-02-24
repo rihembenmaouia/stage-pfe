@@ -1,9 +1,9 @@
 import mongoose from 'mongoose';
 
 export const connectDatabase = async (): Promise<void> => {
-  const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
   if (!mongoUri) {
-    console.error('❌ MONGO_URI (or MONGODB_URI) is required. Set it in .env or environment.');
+    console.error('❌ MONGODB_URI (or MONGO_URI) is required. Set it in .env or environment.');
     process.exit(1);
   }
   try {

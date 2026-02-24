@@ -4,6 +4,11 @@ import { User } from '../models/User';
 import { Venue } from '../models/Venue';
 import { Reservation } from '../models/Reservation';
 import { Event } from '../models/Event';
+import { VirtualTour } from '../models/VirtualTour';
+import { TourHotspot } from '../models/TourHotspot';
+import { Table } from '../models/Table';
+import { Room } from '../models/Room';
+import { Seat } from '../models/Seat';
 import { authenticate, requireAdmin, AuthRequest } from '../middleware/auth';
 
 const router = Router();
@@ -358,6 +363,124 @@ router.patch('/reservations/:id/cancel', async (req, res) => {
   } catch (error) {
     console.error('Error cancelling reservation:', error);
     res.status(500).json({ error: 'Erreur lors de l\'annulation.' });
+  }
+});
+
+// GET /api/admin/virtual-tours?venueId=
+router.get('/virtual-tours', async (req, res) => {
+  try {
+    const venueId = req.query.venueId as string;
+    if (!venueId || !mongoose.Types.ObjectId.isValid(venueId)) {
+      return res.status(400).json({ error: 'venueId requis.' });
+    }
+    const tours = await VirtualTour.find({ venueId }).sort({ createdAt: 1 }).lean();
+    res.json(tours);
+  } catch (error) {
+    console.error('Error fetching virtual tours:', error);
+    res.status(500).json({ error: 'Erreur.' });
+  }
+});
+
+// POST /api/admin/virtual-tours
+router.post('/virtual-tours', async (req, res) => {
+  try {
+    const { venueId, provider, embedUrl, videoUrl, previewImage, isActive } = req.body;
+    if (!venueId) return res.status(400).json({ error: 'venueId requis.' });
+    const tour = await VirtualTour.create({
+      venueId,
+      provider: provider || 'klapty',
+      embedUrl: embedUrl || undefined,
+      videoUrl: videoUrl || undefined,
+      previewImage: previewImage || undefined,
+      isActive: isActive !== false,
+    });
+    res.status(201).json(tour);
+  } catch (error) {
+    console.error('Error creating virtual tour:', error);
+    res.status(500).json({ error: 'Erreur.' });
+  }
+});
+
+// PATCH /api/admin/virtual-tours/:id
+router.patch('/virtual-tours/:id', async (req, res) => {
+  try {
+    const tour = await VirtualTour.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!tour) return res.status(404).json({ error: 'Visite virtuelle introuvable.' });
+    res.json(tour);
+  } catch (error) {
+    console.error('Error updating virtual tour:', error);
+    res.status(500).json({ error: 'Erreur.' });
+  }
+});
+
+// GET /api/admin/tour-hotspots?virtualTourId=
+router.get('/tour-hotspots', async (req, res) => {
+  try {
+    const virtualTourId = req.query.virtualTourId as string;
+    if (!virtualTourId || !mongoose.Types.ObjectId.isValid(virtualTourId)) {
+      return res.status(400).json({ error: 'virtualTourId requis.' });
+    }
+    const hotspots = await TourHotspot.find({ virtualTourId }).lean();
+    res.json(hotspots);
+  } catch (error) {
+    console.error('Error fetching tour hotspots:', error);
+    res.status(500).json({ error: 'Erreur.' });
+  }
+});
+
+// POST /api/admin/tour-hotspots
+router.post('/tour-hotspots', async (req, res) => {
+  try {
+    const { virtualTourId, label, targetType, targetId, xPercent, yPercent, tooltipText, isActive } = req.body;
+    if (!virtualTourId || !label || targetType == null || !targetId || xPercent == null || yPercent == null) {
+      return res.status(400).json({ error: 'virtualTourId, label, targetType, targetId, xPercent, yPercent requis.' });
+    }
+    const hotspot = await TourHotspot.create({
+      virtualTourId,
+      label,
+      targetType,
+      targetId,
+      xPercent: Number(xPercent),
+      yPercent: Number(yPercent),
+      tooltipText: tooltipText || undefined,
+      isActive: isActive !== false,
+    });
+    res.status(201).json(hotspot);
+  } catch (error) {
+    console.error('Error creating tour hotspot:', error);
+    res.status(500).json({ error: 'Erreur.' });
+  }
+});
+
+// PATCH /api/admin/tour-hotspots/:id
+router.patch('/tour-hotspots/:id', async (req, res) => {
+  try {
+    const hotspot = await TourHotspot.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true }
+    );
+    if (!hotspot) return res.status(404).json({ error: 'Point d\'intérêt introuvable.' });
+    res.json(hotspot);
+  } catch (error) {
+    console.error('Error updating tour hotspot:', error);
+    res.status(500).json({ error: 'Erreur.' });
+  }
+});
+
+// DELETE /api/admin/tour-hotspots/:id
+router.delete('/tour-hotspots/:id', async (req, res) => {
+  try {
+    const result = await TourHotspot.findByIdAndDelete(req.params.id);
+    if (!result) return res.status(404).json({ error: 'Point d\'intérêt introuvable.' });
+    res.json({ message: 'Point d\'intérêt supprimé.' });
+  } catch (error) {
+    console.error('Error deleting tour hotspot:', error);
+    res.status(500).json({ error: 'Erreur.' });
   }
 });
 

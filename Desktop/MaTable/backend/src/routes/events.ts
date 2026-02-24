@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import mongoose from 'mongoose';
 import { Event } from '../models/Event';
 import { Venue } from '../models/Venue';
 
@@ -28,15 +29,19 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/events/:id
+// GET /api/v1/events/:idOrSlug
 router.get('/:id', async (req, res) => {
   try {
-    const event = await Event.findById(req.params.id).populate('venueId');
-    if (!event) return res.status(404).json({ error: 'Event not found' });
+    const idOrSlug = req.params.id;
+    const event = await (mongoose.Types.ObjectId.isValid(idOrSlug) && idOrSlug.length === 24
+      ? Event.findById(idOrSlug)
+      : Event.findOne({ slug: idOrSlug })
+    ).populate('venueId');
+    if (!event) return res.status(404).json({ error: 'Événement non trouvé' });
     res.json(event);
   } catch (error) {
     console.error('Error fetching event:', error);
-    res.status(500).json({ error: 'Failed to fetch event' });
+    res.status(500).json({ error: 'Échec du chargement de l\'événement.' });
   }
 });
 

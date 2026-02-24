@@ -4,6 +4,7 @@ import { Table } from '../models/Table';
 import { Room } from '../models/Room';
 import { Seat } from '../models/Seat';
 import { authenticate, AuthRequest } from '../middleware/auth';
+import { generateConfirmationCode } from '../utils/confirmationCode';
 
 const router = Router();
 
@@ -73,6 +74,13 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       }
     }
 
+    let confirmationCode = generateConfirmationCode(8);
+    let exists = await Reservation.findOne({ confirmationCode });
+    while (exists) {
+      confirmationCode = generateConfirmationCode(8);
+      exists = await Reservation.findOne({ confirmationCode });
+    }
+
     const reservation = new Reservation({
       userId: req.userId,
       venueId,
@@ -83,17 +91,20 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
       startAt: start,
       endAt: end,
       status: 'CONFIRMED',
+      paymentStatus: 'unpaid',
+      confirmationCode,
       totalPrice: total,
       guestFirstName: String(guestFirstName).trim(),
       guestLastName: String(guestLastName).trim(),
       guestPhone: phone,
       partySize: party,
+      source: 'web',
     });
     await reservation.save();
     await reservation.populate(['tableId', 'roomId', 'seatId', 'venueId']);
 
     res.status(201).json({
-      message: 'Reservation created',
+      message: 'Réservation créée',
       reservation: {
         _id: reservation._id,
         userId: reservation.userId,
@@ -105,7 +116,13 @@ router.post('/', authenticate, async (req: AuthRequest, res) => {
         startAt: reservation.startAt,
         endAt: reservation.endAt,
         status: reservation.status,
+        paymentStatus: reservation.paymentStatus,
+        confirmationCode: reservation.confirmationCode,
         totalPrice: reservation.totalPrice,
+        guestFirstName: reservation.guestFirstName,
+        guestLastName: reservation.guestLastName,
+        guestPhone: reservation.guestPhone,
+        partySize: reservation.partySize,
         createdAt: reservation.createdAt,
       },
     });
@@ -151,7 +168,7 @@ router.get('/:id/ticket', authenticate, async (req: AuthRequest, res) => {
       .lean();
     if (!reservation) return res.status(404).json({ error: 'Reservation not found' });
     const v = reservation.venueId as any;
-    const payload = `${reservation._id}`;
+    const payload = (reservation as any).confirmationCode || reservation._id.toString();
     res.json({
       _id: reservation._id,
       startAt: reservation.startAt,
@@ -160,6 +177,7 @@ router.get('/:id/ticket', authenticate, async (req: AuthRequest, res) => {
       bookingType: reservation.bookingType,
       totalPrice: reservation.totalPrice,
       partySize: reservation.partySize,
+      confirmationCode: (reservation as any).confirmationCode,
       venueName: v?.name,
       venueAddress: v?.address,
       venueCity: v?.city,
