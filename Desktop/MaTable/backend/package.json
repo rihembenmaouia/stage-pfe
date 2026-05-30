@@ -5,11 +5,11 @@
   "main": "dist/server.js",
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "build:vercel": "node scripts/bundle-vercel.mjs",
+    "dev": "node init && tsx watch src/server.ts",
+    "build": "node init && tsc",
+    "build:vercel": "node init && node scripts/bundle-vercel.mjs",
     "vercel-build": "npm run build:vercel",
-    "start": "node dist/server.js",
+    "start": "node init && node dist/server.js",
     "seed": "tsx src/scripts/seed.ts",
     "fix-klapty-urls": "tsx src/scripts/fix-klapty-urls.ts"
   },
