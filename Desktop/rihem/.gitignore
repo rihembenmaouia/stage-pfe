@@ -1,15 +1,27 @@
+# Dependencies
 node_modules/
+*/node_modules/
 .expo/
+
+# Python
 .venv/
 venv/
-.env
-.env.local
 *.pyc
 __pycache__/
+
+# Environment
+.env
+.env.local
+
+# OS
 .DS_Store
 Thumbs.db
+
+# IDE
 .vscode/
 .idea/
+
+# Build
 build/
 dist/
 .next/
